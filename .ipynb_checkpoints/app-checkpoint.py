@@ -42,7 +42,6 @@ def precipitation():
 
     for precip in precips:
         precip_dict[precip[1]] = precip[0]
-    session.close()
     return(jsonify(precip_dict))
 
 @app.route("/api/v1.0/stations")
@@ -54,19 +53,15 @@ def stations():
     for station in stations:
         station_dict[station[0]] = station[1]
     
-    session.close()
     return(jsonify(station_dict))
 
 @app.route("/api/v1.0/tobs")
 def tobs():
     print("Server received request for 'tobs' page...")
-    tobs = session.query(Measurement.date, Measurement.tobs)\
+    tobs = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs))\
         .filter(Measurement.station == "USC00519281").all()
-    tobs_dict = {}
-    for tob in tobs:
-        tobs_dict[tob[0]] = tob[1]
-    session.close()
-    return(jsonify(tobs_dict))
+    temp_dict = {"min": tobs[0][0], "max": tobs[0][1], "avg": tobs[0][2]}
+    return(jsonify(temp_dict))
 
 @app.route("/api/v1.0/<start>")
 def start_date(start):
@@ -80,11 +75,10 @@ def start_date(start):
         start_dict["avg"] = starter[1]
         start_dict["max"] = starter[2]
         start_list.append(start_dict) 
-    session.close()
     return(jsonify(start_list))    
 
 @app.route("/api/v1.0/<start>/<end>")
-def start_end_date(start, end):
+def start__end_date(start, end):
     print("Server received request for 'start' page...")
     start_end_tobs = session.query(func.min(Measurement.tobs), func.max(Measurement.tobs), func.avg(Measurement.tobs))\
         .filter(Measurement.date >= start).filter(Measurement.date <= end).all()
